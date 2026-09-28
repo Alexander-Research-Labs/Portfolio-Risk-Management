@@ -191,8 +191,9 @@ def calibrate_from_returns(returns_by_ticker, tickers):
         jump_returns_by_ticker[t] = jump_returns
         diffusive_by_ticker[t] = diffusive_returns
 
+    min_tickers = max(2, round(config.SYSTEMIC_JUMP_FRACTION * len(tickers)))
     shared_days = detect_shared_jump_days(
-        {t: jr.index for t, jr in jump_returns_by_ticker.items()}, aligned_index, config.SYSTEMIC_JUMP_MIN_TICKERS
+        {t: jr.index for t, jr in jump_returns_by_ticker.items()}, aligned_index, min_tickers
     )
     lambda_market = len(shared_days) / years if years > 0 else 0.0
 
@@ -204,7 +205,8 @@ def calibrate_from_returns(returns_by_ticker, tickers):
         diffusive_returns = diffusive_by_ticker[t]
         mu, sigma = calibrate_gbm(diffusive_returns)
         idio_jump_count = len(jump_returns.index.difference(shared_days))
-        lam_idio = idio_jump_count / years if years > 0 else 0.0
+        ticker_years = len(returns_by_ticker[t]) / config.TRADING_DAYS_PER_YEAR
+        lam_idio = idio_jump_count / ticker_years if ticker_years > 0 else 0.0
         heston = calibrate_heston(diffusive_returns, ticker=t)
         all_jump_returns.append(jump_returns.values)
         standardized = (diffusive_returns - diffusive_returns.mean()) / diffusive_returns.std()

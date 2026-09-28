@@ -1,5 +1,7 @@
 state/prices/
 state/calibrated_params.json
+holdings_bene.json
+state/calibrated_params_bene.json
 __pycache__/
 *.pyc
 .env

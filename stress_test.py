@@ -51,6 +51,24 @@ def require_ticker_coverage(tickers, params):
             f"data.calibrate_universe([...]) with these tickers included."
         )
 
+    corr = params["correlation_matrix"]
+    stress_corr = params.get("stress_correlation_matrix", corr)
+    bad = set()
+    for ti in tickers:
+        for tj in tickers:
+            for matrix in (corr, stress_corr):
+                v = matrix.get(ti, {}).get(tj)
+                if v is None or not np.isfinite(v):
+                    bad.add(ti)
+                    bad.add(tj)
+    if bad:
+        raise ValueError(
+            f"Undefined correlation for: {', '.join(sorted(bad))}. This usually means the "
+            f"ticker's price has been flat or frozen over the correlation window (delisted, "
+            f"halted, or otherwise dead) - remove it from holdings.json or re-run calibration "
+            f"once it has real recent price movement again."
+        )
+
 
 def build_seed_invariant_inputs(tickers, params, horizon_days):
     chol_calm = build_correlation_cholesky(tickers, params["correlation_matrix"])
